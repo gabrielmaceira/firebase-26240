@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterDetail } from './CharacterDetail';
 import { useParams } from 'react-router-dom';
-import { data } from '../data/data'
-
-
-/* import db from './firebase/firebase';
-import { getDoc, doc } from 'firebase/firestore'; */
+import db from '../firebase/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 export const CharacterDetailContainer = () => {
   const [charData, setCharData] = useState({});
@@ -14,13 +11,15 @@ export const CharacterDetailContainer = () => {
 
   useEffect(() => {
     setLoading(true)
-    const getCharacter = new Promise((res) => {
-      setTimeout(() =>
-        res(data.find(char => char.id === itemId))
-        , 500)
-    })
 
-    getCharacter.then(item => setCharData(item)).finally(() => setLoading(false))
+    const queryChar = doc(db, "characters", itemId)
+
+    getDoc(queryChar).then(res => {
+      setCharData({ id: res.id, ...res.data() })
+    })
+    .catch(err => console.log(err))
+    .finally(() => setLoading(false))
+
   }, []);
 
   return loading ? <h2>Cargando...</h2> : <CharacterDetail {...charData} />;

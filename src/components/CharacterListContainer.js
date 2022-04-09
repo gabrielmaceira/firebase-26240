@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { CharacterList } from './CharacterList';
 import { useParams } from 'react-router-dom';
-import { data } from '../data/data';
-
-/* import db from './firebase/firebase';
-import {  } from 'firebase/firestore'; */
+import db from '../firebase/firebase';
+import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
 export const CharacterListContainer = ({ greeting }) => {
   const [characters, setCharacters] = useState([]);
@@ -15,17 +13,21 @@ export const CharacterListContainer = ({ greeting }) => {
   useEffect(() => {
     setLoader(true);
 
-    const getCharacters = new Promise(res => {
-      const myItems = categoryId ? data.filter(char => char.category === categoryId) : data;
-      setTimeout(() => {
-        res(myItems)
-      }, 500)
-    })
+    const queryChar = categoryId ? query(collection(db, "characters"), where("category", "==", categoryId), orderBy("name"))
+      : query(collection(db, "characters"), orderBy("name"))
 
-    getCharacters.then(chars => setCharacters(chars))
-      .finally(() => {
-        setLoader(false);
-      });
+    getDocs(queryChar)
+    .then(res => {
+      const formattedData = res.docs.map(el => {
+        return { id: el.id, ...el.data() }
+      })
+
+      setCharacters(formattedData)
+    })
+    .catch(err => console.log(err))
+    .finally(() => setLoader(false))
+
+
   }, [categoryId]);
 
   return loader ? (
